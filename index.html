@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Detective Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(to bottom right, #FFD700, #FFA500); /* Yellow-orange gradient */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #333;
+            text-align: center;
+        }
+
+        .game-container {
+            position: relative;
+            background-color: #FFFBE6; /* Lighter yellow for the container */
+            padding: 30px 40px;
+            border-radius: 25px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            max-width: 800px; /* Adjusted max-width to accommodate 4 columns */
+            width: 90%;
+            margin: 20px;
+        }
+
+        .score-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ffffff;
+            padding: 10px 15px;
+            border-radius: 15px;
+            box-shadow: 
+                0 4px 8px rgba(0, 0, 0, 0.1),
+                inset 0 0 5px rgba(255, 255, 255, 0.5),
+                inset 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-weight: bold;
+            color: #FFA500;
+            display: flex;
+            flex-direction: row;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        #score-display {
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        #turns-left {
+            font-size: 1.1em;
+            color: #8B0000;
+            font-weight: bold;
+            margin: 0;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-text {
+            background-image: linear-gradient(to right, #FFA500, #CD7F32);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .cookie-emoji {
+            font-size: 4em; /* Enlarged by 2em */
+            display: inline-block;
+            animation: jump 1s ease-in-out infinite;
+        }
+        
+        @keyframes jump {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .instruction {
+            margin-bottom: 25px;
+            font-size: 1.1em;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        .guess-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr); /* 4 columns on desktop */
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .guess-part {
+            background-color: #FFFFF0; /* Creamy white for input sections */
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .guess-part label {
+            display: block;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #8B4513; /* Dark brown for labels */
+            font-size: 1.1em;
+        }
+
+        .options-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .option-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .selection-box {
+            position: relative;
+            background-color: white;
+            border: 2px solid white;
+            border-radius: 10px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .color-circle-option, .icing-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.3s ease, box-shadow 0.2s ease;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1), inset -2px -2px 5px rgba(255,255,255,0.7);
+        }
+        
+        .shape-option {
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .icon-option {
+            font-size: 2.5em;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+            padding: 5px;
+        }
+        
+        .selected {
+            opacity: 1;
+            outline: 3px solid #FF69B4;
+            outline-offset: 3px;
+            border-radius: 50%;
+        }
+        
+        .color-circle-option.selected {
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.2), inset -1px -1px 3px rgba(255,255,255,0.8);
+        }
+
+        .checkmark-box {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1em;
+            line-height: 1;
+            transition: transform 0.2s ease;
+        }
+        .checkmark-box:active {
+            transform: scale(0.9);
+        }
+        .checkmark-box[data-state="tick"] {
+            color: green;
+        }
+        .checkmark-box[data-state="cross"] {
+            color: red;
+        }
+
+        button {
+            background-color: #FF69B4;
+            background: linear-gradient(45deg, #FF69B4, #FFA500);
+            color: white;
+            padding: 20px 40px;
+            border: none;
+            border-radius: 10px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1.4em;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background: linear-gradient(45deg, #FF4F99, #FF8C00);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 3px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .hints-section {
+            margin-top: 30px;
+            background-color: #FFF0D9; /* A light, warm orange tint */
+            padding: 10px;
+            border-radius: 15px;
+            min-height: 100px;
+            text-align: left;
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .hints-section h2 {
+            color: #FFA500;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .hint-item {
+            margin-bottom: 8px;
+            font-size: 1em;
+            color: #666;
+        }
+
+        .hint-item strong {
+            color: #FF69B4;
+        }
+
+        #message {
+            margin-top: 25px;
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #FF69B4;
+        }
+        
+        .reset-button {
+            background: linear-gradient(45deg, #006400, #004d00);
+            color: white;
+            margin-top: 20px;
+        }
+        .reset-button:hover {
+            background: linear-gradient(45deg, #008000, #006400);
+        }
+
+        .hint-button {
+            background: linear-gradient(45deg, #FF69B4, #FFA500);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom right, #FFD700, #FFA500);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #FFFAEE;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+            transform: scale(0.8);
+            animation: bounceIn 0.5s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .modal-title-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .modal-title-container .cookie-emoji {
+            font-size: 5em; /* Enlarged by 2em */
+            margin-bottom: 5px;
+        }
+
+        .modal-title-container h2 {
+            font-size: 2.5em;
+            background-image: linear-gradient(to right, #FFA500, #CD7F32);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            margin: 0;
+        }
+
+        .modal-content p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            color: #555;
+        }
+
+        @keyframes bounceIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                width: 95%;
+            }
+            
+            .score-box {
+                top: 10px;
+                right: 10px;
+                padding: 8px 12px;
+            }
+
+            .guess-section {
+                grid-template-columns: repeat(2, 1fr); /* 2 columns on tablets */
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+
+            .instruction {
+                font-size: 1em;
+            }
+
+            .guess-part {
+                padding: 10px;
+            }
+
+            .guess-part label {
+                font-size: 1em;
+            }
+
+            button {
+                padding: 12px 24px;
+                font-size: 1em;
+            }
+            
+            .color-circle-option, .icing-circle {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .shape-option {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .icon-option {
+                font-size: 2em;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .guess-section {
+                grid-template-columns: 1fr; /* Single column on small phones */
+            }
+            
+            .score-box {
+                position: static;
+                margin-bottom: 20px;
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="welcomeModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-title-container">
+                <span class="cookie-emoji">🍪</span>
+                <h2>Cookie Detective!</h2>
+            </div>
+            <p>
+                Someone ate the cookies! Can you figure out what kind they were? Guess the correct combination of color, icing, shape, and extras in 8 turns or less!
+            </p>
+            <button id="startGameButton"><b>Start</b></button>
+        </div>
+    </div>
+    <div class="game-container">
+        <div class="score-box">
+            <p id="turns-left">Turns left: 8</p>
+            <p id="score-display">Score: 100</p>
+        </div>
+        <h1>
+            <span class="cookie-emoji">🍪</span>
+            <span class="title-text">Cookie Detective!</span>
+        </h1>
+
+        <div class="guess-section">
+            <div class="guess-part">
+                <label>Cookie Color:</label>
+                <div class="options-container" id="cakeColorContainer">
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="color-circle-option" data-value="cream" style="background-color: #FFFDD0;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="color-circle-option" data-value="brown" style="background-color: #8B4513;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="color-circle-option" data-value="peach" style="background-color: #FFDAB9;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="color-circle-option" data-value="light brown" style="background-color: #C0A080;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="guess-part">
+                <label>Icing Type:</label>
+                <div class="options-container" id="icingTypeContainer">
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="icing-circle icon-option" data-value="white icing" style="background-color: #ffffff;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="icing-circle icon-option" data-value="pink" style="background-color: #FFC0CB;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="icing-circle icon-option" data-value="yellow" style="background-color: #FFD966;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <div class="icing-circle icon-option" data-value="brown" style="background-color: #8B4513;"></div>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="guess-part">
+                <label>Cookie Shape:</label>
+                <div class="options-container" id="cookieShapeContainer">
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="shape-option" data-value="circle">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>
+                            </span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="shape-option" data-value="heart">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+                            </span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="shape-option" data-value="triangle">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 22h20L12 2z"></path></svg>
+                            </span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="shape-option" data-value="biscuit">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="8" width="14" height="8" rx="3" ry="3"></rect></svg>
+                            </span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="guess-part">
+                <label>Extras:</label>
+                <div class="options-container" id="extrasContainer">
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="icon-option" data-value="chocolate chip">🍫</span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="icon-option" data-value="cherry">🍒</span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="icon-option" data-value="coconut">🥥</span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                    <div class="option-item">
+                        <div class="selection-box">
+                            <span class="icon-option" data-value="hazelnuts">🌰</span>
+                            <div class="checkmark-box" data-state="blank"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="verifyGuess()"><b>Verify</b></button>
+        <p id="message"></p>
+
+        <div class="hints-section">
+            <h2>🔎 Your Clues:</h2>
+            <div id="hints">
+            </div>
+        </div>
+        <button class="hint-button" onclick="getHint()">Get a Hint (-10 Points)</button>
+        <button class="reset-button" onclick="resetGame()" style="display: none;"><b>Play Again</b></button>
+    </div>
+
+    <script>
+        const cakeColors = ["cream", "brown", "peach", "light brown"];
+        const icingTypes = ["white icing", "pink", "yellow", "brown"];
+        const cookieShapes = ["circle", "heart", "triangle", "biscuit"];
+        const extrasOptions = ["chocolate chip", "cherry", "coconut", "hazelnuts"];
+        const hintCategories = ["color", "icing", "shape", "extras"];
+
+        let secretCookie = {};
+        let turns = 8;
+        let gameOver = false;
+        let score = 100;
+        let usedHints = [];
+
+        const messageElement = document.getElementById('message');
+        const turnsLeftElement = document.getElementById('turns-left');
+        const hintsElement = document.getElementById('hints');
+        const scoreDisplayElement = document.getElementById('score-display');
+        const hintButton = document.querySelector('.hint-button');
+        const welcomeModal = document.getElementById('welcomeModal');
+        const startGameButton = document.getElementById('startGameButton');
+        
+        // New selectors for the UI elements
+        const cakeColorContainer = document.getElementById('cakeColorContainer');
+        const icingTypeContainer = document.getElementById('icingTypeContainer');
+        const cookieShapeContainer = document.getElementById('cookieShapeContainer');
+        const extrasContainer = document.getElementById('extrasContainer');
+
+        function initializeGame() {
+            // Randomly select the secret cookie combination
+            secretCookie = {
+                color: cakeColors[Math.floor(Math.random() * cakeColors.length)],
+                icing: icingTypes[Math.floor(Math.random() * icingTypes.length)],
+                shape: cookieShapes[Math.floor(Math.random() * cookieShapes.length)],
+                extras: extrasOptions[Math.floor(Math.random() * extrasOptions.length)]
+            };
+            console.log("Secret Cookie (for debugging):", secretCookie);
+
+            turns = 8;
+            score = 100;
+            gameOver = false;
+            usedHints = [];
+            messageElement.textContent = '';
+            turnsLeftElement.textContent = `Turns left: ${turns}`;
+            scoreDisplayElement.textContent = `Score: ${score}`;
+            hintsElement.innerHTML = ''; // Clear previous hints
+            document.querySelector('.reset-button').style.display = 'none'; // Hide reset button initially
+            
+            // Reset UI states
+            document.querySelectorAll('.color-circle-option, .icing-circle, .shape-option, .icon-option').forEach(el => el.classList.remove('selected'));
+            document.querySelectorAll('.checkmark-box').forEach(el => {
+                el.dataset.state = 'blank';
+                el.textContent = '';
+            });
+
+            // Set a default selected item for each category
+            cakeColorContainer.querySelector('.color-circle-option').classList.add('selected');
+            icingTypeContainer.querySelector('.icing-circle').classList.add('selected');
+            cookieShapeContainer.querySelector('.shape-option').classList.add('selected');
+            extrasContainer.querySelector('.icon-option').classList.add('selected');
+            
+            enableInputs(true);
+        }
+
+        function enableInputs(enable) {
+            document.querySelectorAll('input, .icon-option, .shape-option, button').forEach(el => el.disabled = !enable);
+            document.querySelector('.reset-button').disabled = false;
+        }
+        
+        // Event listeners for the new UI elements
+        function setupEventListeners() {
+            cakeColorContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('.color-circle-option');
+                if (target) {
+                    cakeColorContainer.querySelectorAll('.color-circle-option').forEach(el => el.classList.remove('selected'));
+                    target.classList.add('selected');
+                }
+            });
+
+            icingTypeContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('.icing-circle');
+                if (target) {
+                    icingTypeContainer.querySelectorAll('.icing-circle').forEach(el => el.classList.remove('selected'));
+                    target.classList.add('selected');
+                }
+            });
+
+            cookieShapeContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('.shape-option');
+                if (target) {
+                    cookieShapeContainer.querySelectorAll('.shape-option').forEach(el => el.classList.remove('selected'));
+                    target.classList.add('selected');
+                }
+            });
+
+            extrasContainer.addEventListener('click', (e) => {
+                if (e.target.classList.contains('icon-option')) {
+                    extrasContainer.querySelectorAll('.icon-option').forEach(el => el.classList.remove('selected'));
+                    e.target.classList.add('selected');
+                }
+            });
+
+            // New event listener for the checkmark boxes
+            document.querySelectorAll('.checkmark-box').forEach(box => {
+                box.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    let currentState = e.target.dataset.state;
+                    let newState;
+                    let newText = '';
+
+                    if (currentState === 'blank') {
+                        newState = 'tick';
+                        newText = '✓';
+                    } else if (currentState === 'tick') {
+                        newState = 'cross';
+                        newText = '✗';
+                    } else {
+                        newState = 'blank';
+                        newText = '';
+                    }
+
+                    e.target.dataset.state = newState;
+                    e.target.textContent = newText;
+                });
+            });
+        }
+        
+        function getHint() {
+            if (gameOver) return;
+
+            const availableHints = hintCategories.filter(category => !usedHints.includes(category));
+
+            if (availableHints.length > 0) {
+                const randomCategory = availableHints[Math.floor(Math.random() * availableHints.length)];
+                const correctValue = secretCookie[randomCategory];
+                usedHints.push(randomCategory);
+                
+                score -= 10;
+                scoreDisplayElement.textContent = `Score: ${score}`;
+
+                const hintText = `<div class="hint-item"><strong>Hint:</strong> The correct ${randomCategory} is <strong>${correctValue}</strong>.</div>`;
+                hintsElement.innerHTML += hintText;
+            } else {
+                messageElement.textContent = "No more hints available!";
+                hintButton.disabled = true;
+            }
+        }
+
+        function verifyGuess() {
+            if (gameOver) return;
+
+            const guessedCookie = {
+                color: cakeColorContainer.querySelector('.selected')?.dataset.value,
+                icing: icingTypeContainer.querySelector('.selected')?.dataset.value,
+                shape: cookieShapeContainer.querySelector('.selected')?.dataset.value,
+                extras: extrasContainer.querySelector('.selected')?.dataset.value
+            };
+
+            if (!guessedCookie.color || !guessedCookie.icing || !guessedCookie.shape || !guessedCookie.extras) {
+                messageElement.textContent = 'Please select an option for each category before verifying.';
+                return;
+            }
+
+            turns--;
+            score -= 5; // Deduct points for each guess
+            turnsLeftElement.textContent = `Turns left: ${turns}`;
+            scoreDisplayElement.textContent = `Score: ${score}`;
+
+            let correctCount = 0;
+            if (guessedCookie.color === secretCookie.color) correctCount++;
+            if (guessedCookie.icing === secretCookie.icing) correctCount++;
+            if (guessedCookie.shape === secretCookie.shape) correctCount++;
+            if (guessedCookie.extras === guessedCookie.extras) correctCount++;
+            
+            messageElement.textContent = `You got ${correctCount} part(s) right! Keep guessing!`;
+
+            if (correctCount === 4) {
+                messageElement.textContent = `🎉 Congratulations! You guessed the cookie perfectly! Final Score: ${score}! 🎉`;
+                gameOver = true;
+                enableInputs(false);
+                document.querySelector('.reset-button').style.display = 'inline-block';
+            } else if (turns === 0) {
+                messageElement.textContent = `Game Over! You ran out of turns. The secret cookie was: ${secretCookie.color}, ${secretCookie.icing}, ${secretCookie.shape}, and ${secretCookie.extras}. Final Score: ${score}!`;
+                gameOver = true;
+                enableInputs(false);
+                document.querySelector('.reset-button').style.display = 'inline-block';
+            }
+        }
+
+        function resetGame() {
+            welcomeModal.style.display = 'flex';
+        }
+
+        startGameButton.addEventListener('click', () => {
+            welcomeModal.style.display = 'none';
+            initializeGame();
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            setupEventListeners();
+        });
+    </script>
+</body>
+</html>
